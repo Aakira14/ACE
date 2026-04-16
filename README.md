@@ -31,14 +31,14 @@ ACE is a sleek, modern web app that brings all essential Google tools into one u
 
 ## 🖥️ Screenshots
 
-### Landing Page
-
-
 ### Dashboard
-
+![Dashboard](./assets/Dashboard.png)
 
 ### Login System
+![Dashboard](./assets/loginpage.png)
 
+### Homescreen
+![Dashboard](./assets/Homescreen.png)
 
 ---
 
