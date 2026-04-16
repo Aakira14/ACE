@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ACE</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --purple-deep:   #0d0010;
+    --purple-void:   #130020;
+    --purple-dark:   #1e003a;
+    --purple-mid:    #4b0082;
+    --purple-bright: #8b00ff;
+    --purple-glow:   #bf5fff;
+    --purple-neon:   #d966ff;
+    --white:         #f0e6ff;
+    --gray-dim:      #4a3a5c;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--purple-void);
+    overflow: hidden;
+    font-family: 'Rajdhani', sans-serif;
+    cursor: none;
+  }
+
+  /* ── VOID BACKGROUND ── */
+  .bg {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 100%, #2a004d 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 20% 20%,  #1a0030 0%, transparent 60%),
+      radial-gradient(ellipse 40% 50% at 80% 10%,  #1a0030 0%, transparent 60%),
+      #080010;
+  }
+
+  /* scanlines */
+  .bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.18) 2px,
+      rgba(0,0,0,0.18) 4px
+    );
+    pointer-events: none;
+  }
+
+  /* ── PARTICLES ── */
+  canvas#particles {
+    position: fixed; inset: 0; z-index: 1;
+    pointer-events: none;
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  .cursor {
+    position: fixed; z-index: 9999;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--purple-neon);
+    box-shadow: 0 0 12px 4px var(--purple-bright);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: transform .1s ease, opacity .2s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed; z-index: 9998;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--purple-glow);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: transform .22s ease, opacity .3s;
+    opacity: .6;
+  }
+
+  /* ── STAGE ── */
+  .stage {
+    position: relative; z-index: 10;
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0;
+  }
+
+  /* ── CORNER BRACKETS ── */
+  .corner {
+    position: fixed;
+    width: 44px; height: 44px;
+    opacity: 0;
+    animation: fadeIn .6s ease forwards;
+  }
+  .corner svg { width: 100%; height: 100%; }
+  .corner.tl { top: 28px; left: 28px; animation-delay: 2.6s; }
+  .corner.tr { top: 28px; right: 28px; transform: scaleX(-1); animation-delay: 2.7s; }
+  .corner.bl { bottom: 28px; left: 28px; transform: scaleY(-1); animation-delay: 2.8s; }
+  .corner.br { bottom: 28px; right: 28px; transform: scale(-1); animation-delay: 2.9s; }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* ── HUD LINES ── */
+  .hud-line {
+    position: fixed;
+    background: var(--purple-mid);
+    opacity: 0;
+    animation: expandH .8s ease forwards;
+  }
+  .hud-line.top    { top: 0;    left: 0; width: 0; height: 1px; animation-delay: .2s; }
+  .hud-line.bottom { bottom: 0; left: 0; width: 0; height: 1px; animation-delay: .4s; }
+  .hud-line.left   { left: 0;  top: 0; width: 1px; height: 0; animation: expandV .6s ease forwards; animation-delay: .1s; opacity: 0; }
+  .hud-line.right  { right: 0; top: 0; width: 1px; height: 0; animation: expandV .6s ease forwards; animation-delay: .3s; opacity: 0; }
+  @keyframes expandH {
+    0%  { opacity: 0; width: 0; }
+    10% { opacity: 1; }
+    100%{ opacity: .5; width: 100%; }
+  }
+  @keyframes expandV {
+    0%  { opacity: 0; height: 0; }
+    10% { opacity: 1; }
+    100%{ opacity: .5; height: 100%; }
+  }
+
+  /* ── PRE-TITLE ── */
+  .pre-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(11px, 1.2vw, 14px);
+    font-weight: 400;
+    letter-spacing: .5em;
+    color: var(--purple-glow);
+    text-transform: uppercase;
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: slideDown .8s ease forwards;
+    animation-delay: 2.4s;
+    margin-bottom: 8px;
+  }
+  @keyframes slideDown {
+    to { opacity: .7; transform: translateY(0); }
+  }
+
+  /* ── MAIN TITLE ── */
+  .title-wrap {
+    display: flex;
+    align-items: center;
+    gap: .04em;
+    position: relative;
+  }
+
+  .letter {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(120px, 22vw, 260px);
+    line-height: .88;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--purple-mid);
+    position: relative;
+    opacity: 0;
+    transform: translateY(60px) skewY(8deg);
+    transition: none;
+  }
+
+  .letter.reveal {
+    animation: letterReveal .55s cubic-bezier(.22,1,.36,1) forwards;
+  }
+
+  .letter.lit {
+    color: var(--white);
+    -webkit-text-stroke: 0px transparent;
+    text-shadow:
+      0 0 20px var(--purple-bright),
+      0 0 60px var(--purple-mid),
+      0 0 120px rgba(75,0,130,.5);
+  }
+
+  /* ensure letters stay visible after their reveal animation */
+  .letter.visible {
+    opacity: 1;
+    transform: translateY(0) skewY(0deg);
+  }
+
+  @keyframes letterReveal {
+    0%   { opacity: 0; transform: translateY(70px) skewY(10deg); }
+    60%  { opacity: 1; transform: translateY(-8px) skewY(-2deg); }
+    80%  { transform: translateY(4px) skewY(1deg); }
+    100% { opacity: 1; transform: translateY(0) skewY(0deg); }
+  }
+
+  /* glitch pseudo after full reveal */
+  .letter.glitch {
+    animation: glitchPulse 3.5s ease infinite;
+    animation-delay: var(--gd, 0s);
+  }
+  @keyframes glitchPulse {
+    0%,90%,100% {
+      text-shadow:
+        0 0 20px var(--purple-bright),
+        0 0 60px var(--purple-mid),
+        0 0 120px rgba(75,0,130,.5);
+      clip-path: none;
+    }
+    92% {
+      text-shadow:
+        -3px 0 var(--purple-neon),
+        3px 0 rgba(0,255,255,.4),
+        0 0 40px var(--purple-bright);
+      clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%);
+    }
+    94% {
+      text-shadow:
+        2px 0 var(--purple-bright),
+        -2px 0 rgba(0,255,200,.3);
+      clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+    }
+    96% {
+      text-shadow:
+        0 0 20px var(--purple-bright),
+        0 0 60px var(--purple-mid);
+      clip-path: none;
+    }
+  }
+
+  /* ── UNDERSCORE STRIPE ── */
+  .stripe {
+    position: absolute;
+    bottom: -4px; left: 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, var(--purple-neon), var(--purple-bright), transparent);
+    transition: width .9s cubic-bezier(.22,1,.36,1);
+  }
+  .stripe.open { width: 100%; }
+
+  /* ── SUBTITLE ── */
+  .subtitle {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(13px, 1.6vw, 18px);
+    font-weight: 300;
+    letter-spacing: .35em;
+    color: var(--purple-glow);
+    text-transform: uppercase;
+    margin-top: 28px;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid var(--purple-neon);
+    width: 0;
+    opacity: 0;
+  }
+  .subtitle.typing {
+    opacity: 1;
+    animation: typeWriter 1.4s steps(22, end) forwards, blinkCaret .75s step-end infinite;
+    animation-delay: 0s, 0s;
+  }
+  @keyframes typeWriter {
+    from { width: 0; }
+    to   { width: 22ch; }
+  }
+  @keyframes blinkCaret {
+    0%,100% { border-color: var(--purple-neon); }
+    50%     { border-color: transparent; }
+  }
+
+  /* ── ENTER BUTTON ── */
+  .enter-btn {
+    margin-top: 52px;
+    position: relative;
+    display: inline-block;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .4em;
+    text-transform: uppercase;
+    color: var(--purple-glow);
+    padding: 14px 48px;
+    border: 1px solid var(--purple-mid);
+    background: transparent;
+    cursor: none;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: color .3s, border-color .3s, box-shadow .3s, transform .3s;
+    animation: fadeUp .7s ease forwards;
+    animation-delay: 4s;
+  }
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .enter-btn::before, .enter-btn::after {
+    content: '';
+    position: absolute;
+    transition: all .4s ease;
+  }
+  .enter-btn::before {
+    inset: -1px;
+    background: linear-gradient(135deg, var(--purple-bright), transparent 40%, transparent 60%, var(--purple-bright));
+    opacity: 0;
+    transition: opacity .4s;
+  }
+  .enter-btn:hover {
+    color: var(--white);
+    border-color: var(--purple-bright);
+    box-shadow: 0 0 24px rgba(139,0,255,.4), inset 0 0 24px rgba(139,0,255,.1);
+  }
+  .enter-btn:hover::before { opacity: .15; }
+
+  .btn-corner {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-color: var(--purple-neon);
+    border-style: solid;
+    transition: all .3s;
+  }
+  .btn-corner.tl { top: -2px; left: -2px;  border-width: 2px 0 0 2px; }
+  .btn-corner.tr { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
+  .btn-corner.bl { bottom: -2px; left: -2px;  border-width: 0 0 2px 2px; }
+  .btn-corner.br { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+  .enter-btn:hover .btn-corner { width: 16px; height: 16px; }
+
+  /* ── LANDING COPY ── */
+  .landing-copy { margin-top: 18px; max-width: 960px; text-align: center; }
+  .landing-head {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(20px, 3.6vw, 36px);
+    color: var(--white);
+    margin-bottom: 8px;
+    opacity: 0; transform: translateY(12px) scale(.98);
+    text-shadow: 0 8px 40px rgba(139,0,255,.18);
+    animation: popIn .72s cubic-bezier(.2,.9,.26,1) forwards; animation-delay: 2.2s;
+  }
+  .landing-p {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(12px, 1.1vw, 16px);
+    color: var(--purple-bright);
+    line-height:1.45; opacity: 0; transform: translateY(18px) scale(.99);
+    text-shadow: 0 6px 30px rgba(139,0,255,.12);
+    animation: popIn .72s cubic-bezier(.2,.9,.26,1) forwards; animation-delay: 2.44s;
+  }
+  @keyframes popIn {
+    0% { opacity: 0; transform: translateY(18px) scale(.98); }
+    60% { opacity: 1; transform: translateY(-6px) scale(1.03); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── STATS ROW ── */
+  .stats {
+    position: fixed; bottom: 44px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 56px;
+    opacity: 0;
+    animation: fadeIn .8s ease forwards;
+    animation-delay: 4.4s;
+  }
+  .stat {
+    text-align: center;
+    font-family: 'Rajdhani', sans-serif;
+  }
+  .stat-val {
+    font-size: 22px; font-weight: 700;
+    color: var(--purple-neon);
+    letter-spacing: .06em;
+  }
+  .stat-lbl {
+    font-size: 10px; font-weight: 400;
+    color: var(--gray-dim);
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* ── VERSION TAG ── */
+  .ver {
+    position: fixed; bottom: 18px; right: 28px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 10px; letter-spacing: .25em;
+    color: var(--gray-dim);
+    opacity: 0;
+    animation: fadeIn .6s ease forwards;
+    animation-delay: 4.6s;
+  }
+
+  /* ── AUTH MODAL (THEMED) ── */
+  .auth-modal {
+    position: fixed; inset: 0; display: grid; place-items: center;
+    background: rgba(6,2,12,0.6); z-index: 9999; opacity: 0; pointer-events: none;
+    transition: opacity .25s ease;
+  }
+  .auth-modal.open { opacity: 1; pointer-events: auto; }
+  .auth-panel {
+    width: min(680px, 92vw); background: linear-gradient(180deg, rgba(18,4,30,.9), rgba(10,2,20,.85));
+    border: 1px solid rgba(139,0,255,.16); box-shadow: 0 10px 50px rgba(0,0,0,.6);
+    padding: 28px; border-radius: 12px; color: var(--purple-glow);
+  }
+  .auth-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+  .auth-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(28px, 5vw, 48px); color: var(--white); letter-spacing:.06em }
+  .auth-tabs { display:flex; gap:12px; }
+  .auth-tab { padding:8px 14px; border-radius:8px; cursor:pointer; background:transparent; border:1px solid transparent; color:var(--purple-glow); }
+  .auth-tab.active { background: linear-gradient(90deg, rgba(215,102,255,.08), rgba(139,0,255,.06)); border-color: rgba(139,0,255,.18); }
+  .auth-body { display:flex; gap:24px; align-items:flex-start; }
+  .auth-col { flex:1; }
+  .auth-field { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .auth-field label { font-size:12px; color:var(--gray-dim); letter-spacing:.18em; text-transform:uppercase; }
+  .auth-field input { padding:12px 12px; border-radius:8px; border:1px solid rgba(139,0,255,.12); background: rgba(0,0,0,.35); color:var(--white); outline:none; }
+  .auth-actions { display:flex; gap:12px; align-items:center; margin-top:8px; }
+  .btn-auth { padding:10px 18px; border-radius:8px; border:1px solid var(--purple-mid); background:transparent; color:var(--purple-glow); cursor:pointer; }
+  .btn-auth.primary { background: linear-gradient(90deg, var(--purple-neon), var(--purple-bright)); color:#fff; border-color:transparent; }
+  .small-note { font-size:12px; color:var(--gray-dim); }
+  .auth-close { background:transparent; border:0; color:var(--gray-dim); cursor:pointer; }
+  .pwd-row { display:flex; gap:8px; align-items:center; }
+  .eye-btn { padding:8px; border-radius:8px; background:rgba(0,0,0,.25); border:1px solid rgba(139,0,255,.08); cursor:pointer; color:var(--purple-glow); }
+  .auth-msg { font-size:13px; margin-top:6px; color:#f6d3ff; }
+</style>
+</head>
+<body>
+
+<!-- cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- background -->
+<div class="bg"></div>
+<canvas id="particles"></canvas>
+
+<!-- HUD frame lines -->
+<div class="hud-line top"></div>
+<div class="hud-line bottom"></div>
+<div class="hud-line left"></div>
+<div class="hud-line right"></div>
+
+<!-- corner brackets -->
+<div class="corner tl">
+  <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M44 2H2V44" stroke="#8b00ff" stroke-width="1.5" stroke-linecap="square"/>
+    <path d="M44 2H2V44" stroke="#d966ff" stroke-width=".5" stroke-linecap="square" opacity=".4"/>
+  </svg>
+</div>
+<div class="corner tr">
+  <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M44 2H2V44" stroke="#8b00ff" stroke-width="1.5" stroke-linecap="square"/>
+    <path d="M44 2H2V44" stroke="#d966ff" stroke-width=".5" stroke-linecap="square" opacity=".4"/>
+  </svg>
+</div>
+<div class="corner bl">
+  <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M44 2H2V44" stroke="#8b00ff" stroke-width="1.5" stroke-linecap="square"/>
+    <path d="M44 2H2V44" stroke="#d966ff" stroke-width=".5" stroke-linecap="square" opacity=".4"/>
+  </svg>
+</div>
+<div class="corner br">
+  <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M44 2H2V44" stroke="#8b00ff" stroke-width="1.5" stroke-linecap="square"/>
+    <path d="M44 2H2V44" stroke="#d966ff" stroke-width=".5" stroke-linecap="square" opacity=".4"/>
+  </svg>
+</div>
+
+<!-- main stage -->
+<div class="stage">
+  <span class="pre-title">// welcome to the ACE</span>
+
+  <div class="title-wrap" id="titleWrap">
+    <span class="letter" id="lA" style="--gd:0s">A</span>
+    <span class="letter" id="lC" style="--gd:.4s">C</span>
+    <span class="letter" id="lE" style="--gd:.8s">E</span>
+    <div class="stripe" id="stripe"></div>
+  </div>
+
+  <div class="subtitle" id="subtitle">ENTER THE ACE World</div>
+
+  <!-- Landing copy: headline + paragraph, fades in after reveal -->
+  <div class="landing-copy" id="landingCopy">
+    <div class="landing-head">why switch tabs when you can have it all?</div>
+    <div class="landing-p">A unified space for Docs, Sheets, Slides, Meet, Gmail, and more—designed to make your workflow smooth and effortless.</div>
+  </div>
+
+  <button class="enter-btn" id="enterBtn" onclick="enterACE()">
+    <div class="btn-corner tl"></div>
+    <div class="btn-corner tr"></div>
+    <div class="btn-corner bl"></div>
+    <div class="btn-corner br"></div>
+    ENTER
+  </button>
+</div>
+
+<!-- stats -->
+<div class="stats">
+  <div class="stat"><div class="stat-val" id="sKills">0</div><div class="stat-lbl">kills</div></div>
+  <div class="stat"><div class="stat-val" id="sRank">S+</div><div class="stat-lbl">rank</div></div>
+  <div class="stat"><div class="stat-val" id="sWins">0</div><div class="stat-lbl">wins</div></div>
+</div>
+
+<div class="ver">v1.0.0 // ACE</div>
+
+  <!-- AUTH MODAL: login / signup -->
+  <div class="auth-modal" id="authModal" aria-hidden="true">
+    <div class="auth-panel" role="dialog" aria-labelledby="authTitle">
+      <div class="auth-head">
+        <div class="auth-title" id="authTitle">ACE Access</div>
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Login</button>
+          <button class="auth-tab" id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
+        </div>
+      </div>
+
+      <div class="auth-body">
+        <div class="auth-col">
+          <div id="loginPane">
+            <div class="auth-field">
+              <label for="loginUser">Username</label>
+              <input id="loginUser" type="text" placeholder="yourname" />
+            </div>
+            <div class="auth-field">
+              <label for="loginPass">Password</label>
+              <div class="pwd-row">
+                <input id="loginPass" type="password" placeholder="min 6 chars" />
+                <button class="eye-btn" onclick="toggleEye('loginPass', this)" type="button">👁</button>
+              </div>
+            </div>
+            <div class="auth-actions">
+              <button class="btn-auth primary" onclick="doLogin()">Login</button>
+              <div class="small-note">Don’t have an account? <button class="auth-tab" onclick="switchTab('signup')">Sign up</button></div>
+            </div>
+            <div class="auth-msg" id="loginMsg"></div>
+          </div>
+
+          <div id="signupPane" style="display:none;">
+            <div class="auth-field">
+              <label for="signUser">Username</label>
+              <input id="signUser" type="text" placeholder="choose a username" />
+            </div>
+            <div class="auth-field">
+              <label for="signPass">Password</label>
+              <div class="pwd-row">
+                <input id="signPass" type="password" placeholder="at least 6 characters" />
+                <button class="eye-btn" onclick="toggleEye('signPass', this)" type="button">👁</button>
+              </div>
+            </div>
+            <div class="auth-actions">
+              <button class="btn-auth primary" onclick="doSignup()">Create Account</button>
+            </div>
+            <div class="auth-msg" id="signupMsg"></div>
+          </div>
+        </div>
+
+        <div class="auth-col" style="max-width:260px;">
+          <div style="font-size:13px;color:var(--gray-dim);">Quick tips</div>
+          <ul style="margin-top:10px;color:var(--gray-dim);line-height:1.5;">
+            <li>Passwords must be at least 6 characters.</li>
+            <li>Accounts are stored locally in your browser.</li>
+            <li>Use a memorable username to sign in later.</li>
+          </ul>
+          <div style="margin-top:18px;display:flex;justify-content:flex-end;"><button class="auth-close" onclick="closeAuth()">Close</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ── CURSOR ── */
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursorRing');
+let mx = -100, my = -100;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+  ring.style.left   = mx + 'px'; ring.style.top   = my + 'px';
+});
+
+/* ── PARTICLES ── */
+const canvas = document.getElementById('particles');
+const ctx    = canvas.getContext('2d');
+let W, H, parts = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+function mkPart() {
+  return {
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: Math.random() * 1.4 + .2,
+    vx: (Math.random() - .5) * .3,
+    vy: -(Math.random() * .5 + .1),
+    life: Math.random(),
+    maxLife: Math.random() * 180 + 60,
+    age: 0,
+    hue: Math.random() * 60 + 260
+  };
+}
+for (let i = 0; i < 120; i++) { const p = mkPart(); p.age = Math.random() * p.maxLife; parts.push(p); }
+
+function drawParts() {
+  ctx.clearRect(0, 0, W, H);
+  parts.forEach(p => {
+    p.age++;
+    p.x += p.vx; p.y += p.vy;
+    const ratio = p.age / p.maxLife;
+    const alpha = ratio < .2 ? ratio * 5 : ratio > .8 ? (1 - ratio) * 5 : 1;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${p.hue},100%,70%,${alpha * .55})`;
+    ctx.fill();
+    if (p.age >= p.maxLife) Object.assign(p, mkPart(), { age: 0 });
+  });
+  /* mouse-reactive extra particles */
+  if (mx > 0) {
+    ctx.beginPath();
+    ctx.arc(mx, my, 40, 0, Math.PI * 2);
+    const g = ctx.createRadialGradient(mx, my, 0, mx, my, 40);
+    g.addColorStop(0, 'rgba(139,0,255,.12)');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+  requestAnimationFrame(drawParts);
+}
+drawParts();
+
+/* ── LETTER REVEAL SEQUENCE ── */
+const letters = ['lA','lC','lE'];
+const delays  = [600, 1100, 1700];
+
+letters.forEach((id, i) => {
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    el.classList.add('reveal');
+    el.addEventListener('animationend', () => {
+      // remove the transient reveal class and make the letter stay visible
+      el.classList.remove('reveal');
+      el.classList.add('lit', 'glitch', 'visible');
+      el.style.animation = '';
+    }, { once: true });
+  }, delays[i]);
+});
+
+/* stripe after last letter */
+setTimeout(() => {
+  document.getElementById('stripe').classList.add('open');
+}, 2300);
+
+/* subtitle typewriter */
+setTimeout(() => {
+  document.getElementById('subtitle').classList.add('typing');
+}, 2800);
+
+/* count-up stats */
+setTimeout(() => {
+  countUp('sKills', 1247, 1200);
+  countUp('sWins',  389,  1200);
+}, 4500);
+
+function countUp(id, target, duration) {
+  const el = document.getElementById(id);
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(ease * target).toLocaleString();
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ── ENTER FLASH ── */
+function enterACE() {
+  // open the auth modal instead of immediate fade — let user login or sign up
+  const modal = document.getElementById('authModal');
+  if (modal) {
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    // focus username field for convenience
+    setTimeout(() => {
+      const u = document.getElementById('loginUser'); if (u) u.focus();
+    }, 80);
+  }
+}
+
+// AUTH helpers
+function switchTab(tab) {
+  const loginPane = document.getElementById('loginPane');
+  const signupPane = document.getElementById('signupPane');
+  const tLogin = document.getElementById('tabLogin');
+  const tSignup = document.getElementById('tabSignup');
+  document.getElementById('loginMsg').textContent = '';
+  document.getElementById('signupMsg').textContent = '';
+  if (tab === 'signup') {
+    loginPane.style.display = 'none'; signupPane.style.display = '';
+    tLogin.classList.remove('active'); tSignup.classList.add('active');
+    setTimeout(()=>{ const i = document.getElementById('signUser'); if(i) i.focus(); }, 80);
+  } else {
+    signupPane.style.display = 'none'; loginPane.style.display = '';
+    tSignup.classList.remove('active'); tLogin.classList.add('active');
+    setTimeout(()=>{ const i = document.getElementById('loginUser'); if(i) i.focus(); }, 80);
+  }
+}
+
+function toggleEye(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+function doSignup() {
+  const user = (document.getElementById('signUser')||{}).value || '';
+  const pass = (document.getElementById('signPass')||{}).value || '';
+  const msg = document.getElementById('signupMsg'); msg.textContent = '';
+  if (!user.trim()) { msg.textContent = 'Choose a username.'; return; }
+  if (pass.length < 6) { msg.textContent = 'Password must be at least 6 characters.'; return; }
+  const users = JSON.parse(localStorage.getItem('ace_users') || '{}');
+  if (users[user]) { msg.textContent = 'Username already exists.'; return; }
+  users[user] = { password: pass };
+  localStorage.setItem('ace_users', JSON.stringify(users));
+  msg.textContent = 'Account created — you can now login.';
+  // switch to login and prefill
+  document.getElementById('loginUser').value = user;
+  document.getElementById('loginPass').value = '';
+  setTimeout(()=> switchTab('login'), 900);
+}
+
+function doLogin() {
+  const user = (document.getElementById('loginUser')||{}).value || '';
+  const pass = (document.getElementById('loginPass')||{}).value || '';
+  const msg = document.getElementById('loginMsg'); msg.textContent = '';
+  if (!user.trim()) { msg.textContent = 'Enter your username.'; return; }
+  const users = JSON.parse(localStorage.getItem('ace_users') || '{}');
+  if (!users[user]) { msg.textContent = 'No account found with that username.'; return; }
+  if (users[user].password !== pass) { msg.textContent = 'Incorrect password.'; return; }
+  // success: persist current user and go to dashboard
+  localStorage.setItem('ace_currentUser', user);
+  msg.textContent = 'Welcome back, ' + user + '! Redirecting...';
+  // update pre-title for feedback
+  const pre = document.querySelector('.pre-title'); if (pre) pre.textContent = `// welcome back, ${user}`;
+  setTimeout(()=> {
+    window.location.href = 'dashboard.html';
+  }, 700);
+}
+
+function closeAuth() {
+  const modal = document.getElementById('authModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+</script>
+</body>
+</html>

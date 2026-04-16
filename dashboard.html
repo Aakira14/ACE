@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ACE — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --purple-void:#130020; --purple-mid:#4b0082; --purple-neon:#d966ff; --white:#f0e6ff; --gray-dim:#6f5b7e;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:Rajdhani,system-ui;background:linear-gradient(180deg,#080010 0%, #150022 100%);color:var(--purple-neon)}
+    .app{display:flex;height:100vh;gap:24px;padding:24px}
+    .sidebar{width:260px;background:linear-gradient(180deg,rgba(10,2,20,.7),rgba(6,2,12,.6));border:1px solid rgba(139,0,255,.12);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px}
+    .brand{font-family:'Bebas Neue';font-size:20px;color:var(--white);letter-spacing:.06em}
+    .profile{margin-left:auto;display:flex;gap:10px;align-items:center}
+    .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(90deg,var(--purple-neon),var(--purple-mid));display:inline-block}
+    .topbar{display:flex;align-items:center;gap:18px;width:100%;}
+    .content{flex:1;display:flex;flex-direction:column;gap:18px}
+    .header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px}
+    .greet{color:var(--white);font-size:18px}
+    .settings{color:var(--gray-dim);background:transparent;border:1px solid rgba(139,0,255,.06);padding:8px;border-radius:8px;cursor:pointer}
+    .panel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+    .card{background:linear-gradient(180deg,rgba(20,6,30,.6),rgba(10,0,20,.4));border:1px solid rgba(139,0,255,.08);padding:18px;border-radius:10px;cursor:pointer;transition:transform .15s ease,box-shadow .15s}
+    .card:hover{transform:translateY(-6px);box-shadow:0 10px 40px rgba(139,0,255,.06)}
+    .card h3{font-family:'Bebas Neue';color:var(--white);font-size:20px;margin-bottom:6px}
+    .card p{color:var(--gray-dim);font-size:13px}
+    .sidebar .section-title{color:var(--gray-dim);font-size:12px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px}
+    .side-item{padding:10px;border-radius:8px;color:var(--purple-neon);cursor:pointer;border:1px solid transparent}
+    .side-item:hover{background:linear-gradient(90deg,rgba(215,102,255,.04),rgba(139,0,255,.03));border-color:rgba(139,0,255,.08)}
+    .logout{margin-top:auto;padding:10px;border-radius:8px;border:1px solid rgba(139,0,255,.08);background:transparent;color:var(--purple-neon);cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">ACE</div>
+      <div class="section-title">Workspace</div>
+      <div class="side-item" onclick="openPanel('https://docs.google.com/document/')">Document</div>
+      <div class="side-item" onclick="openPanel('https://docs.google.com/spreadsheets/')">Excel (Sheets)</div>
+      <div class="side-item" onclick="openPanel('https://docs.google.com/presentation/')">PPT (Slides)</div>
+      <div class="section-title" style="margin-top:12px">More</div>
+      <div class="side-item" onclick="openPanel('https://drive.google.com/drive/my-drive')">Drive</div>
+      <div class="side-item" onclick="openPanel('https://mail.google.com/')">Gmail</div>
+      <div class="side-item" onclick="openPanel('https://calendar.google.com/')">Calendar</div>
+      <div class="side-item" onclick="openPanel('https://meet.google.com/')">Meet</div>
+      <div class="side-item" onclick="openPanel('https://docs.google.com/forms/')">Forms</div>
+      <button class="logout" onclick="logout()">Logout</button>
+    </aside>
+
+    <main class="content">
+      <div class="header topbar">
+        <div style="display:flex;align-items:center;gap:12px;"><div class="brand">ACE</div><div class="greet" id="greet">Hello</div></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="settings" title="Settings">⚙</button>
+          <div class="avatar" id="avatar"></div>
+        </div>
+      </div>
+
+      <div>
+        <h2 style="color:var(--white);margin-bottom:8px">Quick Access</h2>
+        <div class="panel-grid">
+          <div class="card" onclick="openPanel('https://docs.google.com/document/')">
+            <h3>Google Docs</h3>
+            <p>Create and edit text documents online.</p>
+          </div>
+          <div class="card" onclick="openPanel('https://docs.google.com/spreadsheets/')">
+            <h3>Google Sheets</h3>
+            <p>Spreadsheets for analysis and reports.</p>
+          </div>
+          <div class="card" onclick="openPanel('https://docs.google.com/presentation/')">
+            <h3>Google Slides</h3>
+            <p>Presentations and slide decks.</p>
+          </div>
+          <div class="card" onclick="openPanel('https://drive.google.com/drive/my-drive')">
+            <h3>Google Drive</h3>
+            <p>Your files and folders in the cloud.</p>
+          </div>
+          <div class="card" onclick="openPanel('https://mail.google.com/')">
+            <h3>Gmail</h3>
+            <p>Your email inbox and messages.</p>
+          </div>
+          <div class="card" onclick="openPanel('https://calendar.google.com/')">
+            <h3>Calendar</h3>
+            <p>Schedule and manage events.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+</div>
+
+  <!-- profile slide panel (simplified) -->
+  <div id="profilePanel" style="position:fixed;right:-380px;top:0;height:100vh;width:360px;background:linear-gradient(180deg,rgba(10,2,20,.95),rgba(6,2,12,.95));box-shadow:-20px 0 60px rgba(0,0,0,.6);padding:22px;border-left:1px solid rgba(139,0,255,.06);transition:right .28s ease;z-index:9999;color:var(--purple-neon)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div class="avatar" style="width:48px;height:48px"></div>
+      <div>
+        <div id="pUser" style="font-size:16px;color:var(--white)"></div>
+        <div style="font-size:12px;color:var(--gray-dim)">Member</div>
+      </div>
+      <button style="margin-left:auto;background:transparent;border:0;color:var(--gray-dim);cursor:pointer" onclick="closeProfile()">✕</button>
+    </div>
+
+    <!-- profile panel content intentionally minimal -->
+  </div>
+
+  <script>
+    // ensure user is logged in
+    const user = localStorage.getItem('ace_currentUser');
+    if (!user) { location.href = 'index.html'; }
+    document.getElementById('greet').textContent = `Hello, ${user}`;
+    document.getElementById('pUser').textContent = user;
+
+    // simple profile slide behavior
+    function openProfile(){ document.getElementById('profilePanel').style.right = '0'; }
+    function closeProfile(){ document.getElementById('profilePanel').style.right = '-380px'; }
+
+    // open links from sidebar/cards
+    function openPanel(url){ window.open(url, '_blank'); }
+
+    function logout(){ localStorage.removeItem('ace_currentUser'); location.href = 'index.html'; }
+
+    // wire avatar clicks
+    document.getElementById('avatar').addEventListener('click', openProfile);
+    document.querySelectorAll('.avatar').forEach(a=>a.addEventListener('click', openProfile));
+  </script>
+</body>
+</html>
