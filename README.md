@@ -54,7 +54,7 @@ ACE is a sleek, modern web app that brings all essential Google tools into one u
 
 ```bash
 # Clone the repository
-git clone https://github.com/your username/ace.git
+git clone https://github.com/Aakira14/ace.git
 
 # Open folder
 cd ace
