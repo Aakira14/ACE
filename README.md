@@ -35,10 +35,10 @@ ACE is a sleek, modern web app that brings all essential Google tools into one u
 ![Dashboard](./assets/Dashboard.png)
 
 ### Login System
-![Dashboard](./assets/loginpage.png)
+![Login](./assets/loginpage.png)
 
 ### Homescreen
-![Dashboard](./assets/Homescreen.png)
+![Homescreen](./assets/Homescreen.png)
 
 ---
 
